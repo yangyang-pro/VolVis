@@ -443,16 +443,38 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         TFColor voxel_color = new TFColor();
         TFColor colorAux = new TFColor();
+        
+        //compute the increment and the number of samples
+        double[] increments = new double[3];
+        VectorMath.setVector(increments, rayVector[0] * sampleStep, rayVector[1] * sampleStep, rayVector[2] * sampleStep);
 
+        // Compute the number of times we need to sample
+        double distance = VectorMath.distance(entryPoint, exitPoint);
+        int nrSamples = 1 + (int) Math.floor(distance / sampleStep);
+
+        //the current position is initialized as the entry point
+        double[] currentPos = new double[3];
+        VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
+        
         // TODO 2: To be Implemented this function. Now, it just gives back a constant color depending on the mode
         switch (modeFront) {
             case COMPOSITING:
                 // 1D transfer function 
-                voxel_color.r = 1;
-                voxel_color.g = 0;
-                voxel_color.b = 0;
-                voxel_color.a = 1;
-                opacity = 1;
+                int val = 0;
+                do {
+                    val = getVoxelTrilinear(currentPos);
+                    voxel_color = tFuncFront.getColor(val);
+                    
+                    alpha = (1 - voxel_color.a) * alpha + voxel_color.a;
+                    r = voxel_color.a * voxel_color.r + (1 - voxel_color.a) * r;
+                    g = voxel_color.a * voxel_color.g + (1 - voxel_color.a) * g;
+                    b = voxel_color.a * voxel_color.b + (1 - voxel_color.a) * b;
+                    
+                    for (int i = 0; i < 3; i++) {
+                        currentPos[i] += increments[i];
+                    }
+                    nrSamples--;
+                } while (nrSamples > 0);
                 break;
             case TRANSFER2D:
                 // 2D transfer function 
@@ -472,11 +494,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             voxel_color.a = 1;
             opacity = 1;
         }
-
-        r = voxel_color.r;
-        g = voxel_color.g;
-        b = voxel_color.b;
-        alpha = opacity;
 
         //computes the color
         int color = computePackedPixelColor(r, g, b, alpha);
