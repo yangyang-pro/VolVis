@@ -254,7 +254,52 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      */
     private VoxelGradient getGradientTrilinear(double[] coord) {
         // TODO 6: Implement Tri-linear interpolation for gradients
-        return ZERO_GRADIENT;
+        
+        // Get the coordinates
+        double dx = coord[0], dy = coord[1], dz = coord[2];
+
+        // Verify they are inside the volume gradient
+        if (dx < 0 || dx > (gradients.getDimX() - 2) || dy < 0 || dy > (gradients.getDimY() - 2)
+                || dz < 0 || dz > (gradients.getDimZ() - 2)) {
+            // If not, just return a zero gradient
+            return ZERO_GRADIENT;
+        }
+        
+        int lx = (int) Math.floor(dx);
+        int ly = (int) Math.floor(dy);
+        int lz = (int) Math.floor(dz);
+        
+        int ux = (int) Math.ceil(dx);
+        int uy = (int) Math.ceil(dy);
+        int uz = (int) Math.ceil(dz);
+        
+        double alpha = (dx - lx) / (ux - lx);
+        double beta = (dy - ly) / (uy - ly);
+        double gamma = (dz - lz) / (uz - lz);
+        
+        VoxelGradient g0 = gradients.getGradient(lx, ly, lz);
+        VoxelGradient g1 = gradients.getGradient(ux, ly, lz);
+        VoxelGradient g2 = gradients.getGradient(lx, uy, lz);
+        VoxelGradient g3 = gradients.getGradient(ux, uy, lz);
+        VoxelGradient g4 = gradients.getGradient(lx, ly, uz);
+        VoxelGradient g5 = gradients.getGradient(ux, ly, uz);
+        VoxelGradient g6 = gradients.getGradient(lx, uy, uz);
+        VoxelGradient g7 = gradients.getGradient(ux, uy, uz);
+        
+        double x, y, z;
+        x = (1 - alpha) * (1 - beta) * (1 - gamma) * g0.x + alpha * (1 - beta) * (1 - gamma) * g1.x
+                + (1 - alpha) * beta * (1 - gamma) * g2.x + alpha * beta * (1 - gamma) * g3.x
+                + (1 - alpha) * (1 - beta) * gamma * g4.x + alpha * (1 - beta) * gamma * g5.x
+                + (1 - alpha) * beta * gamma * g6.x + alpha * beta * gamma * g7.x;
+        y = (1 - alpha) * (1 - beta) * (1 - gamma) * g0.y + alpha * (1 - beta) * (1 - gamma) * g1.y
+                + (1 - alpha) * beta * (1 - gamma) * g2.y + alpha * beta * (1 - gamma) * g3.y
+                + (1 - alpha) * (1 - beta) * gamma * g4.y + alpha * (1 - beta) * gamma * g5.y
+                + (1 - alpha) * beta * gamma * g6.y + alpha * beta * gamma * g7.y;
+        z = (1 - alpha) * (1 - beta) * (1 - gamma) * g0.z + alpha * (1 - beta) * (1 - gamma) * g1.z
+                + (1 - alpha) * beta * (1 - gamma) * g2.z + alpha * beta * (1 - gamma) * g3.z
+                + (1 - alpha) * (1 - beta) * gamma * g4.z + alpha * (1 - beta) * gamma * g5.z
+                + (1 - alpha) * beta * gamma * g6.z + alpha * beta * gamma * g7.z;
+        return new VoxelGradient((float) x, (float) y, (float) z);
     }
 
     /**
