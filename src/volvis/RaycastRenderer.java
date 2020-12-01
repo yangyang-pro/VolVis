@@ -402,12 +402,38 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         r = g = b = 0.0;
         double alpha = 0.0;
         double opacity = 0;
+        
+        //compute the increment and the number of samples
+        double[] increments = new double[3];
+        VectorMath.setVector(increments, rayVector[0] * sampleStep, rayVector[1] * sampleStep, rayVector[2] * sampleStep);
 
+        // Compute the number of times we need to sample
+        double distance = VectorMath.distance(entryPoint, exitPoint);
+        int nrSamples = 1 + (int) Math.floor(distance / sampleStep);
+
+        //the current position is initialized as the entry point
+        double[] currentPos = new double[3];
+        VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
+
+        boolean iso = false;
+        do {
+            double value = getVoxel(currentPos) / 1.0;
+            if (value >= isoValueFront) {
+                iso = true;
+                break;
+            }
+            for (int i = 0; i < 3; i++) {
+                currentPos[i] += increments[i];
+            }
+            nrSamples--;
+        } while (nrSamples > 0);
+        
         // isoColorFront contains the isosurface color from the GUI
         r = isoColorFront.r;
         g = isoColorFront.g;
         b = isoColorFront.b;
-        alpha = 1.0;
+        if (iso == false) alpha = 0;
+        else alpha = 1;
         //computes the color
         int color = computePackedPixelColor(r, g, b, alpha);
         return color;
