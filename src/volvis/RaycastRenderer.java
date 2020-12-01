@@ -178,7 +178,44 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     private short getVoxelTrilinear(double[] coord) {
         // TODO 1: Implement Tri-Linear interpolation and use it in your code
         // instead of getVoxel().
-        return 0;
+        
+        double dx = coord[0];
+        double dy = coord[1];
+        double dz = coord[2];
+        
+        // Verify they are inside the volume
+        if (dx < 0 || dx > volume.getDimX() - 1 || dy < 0 || dy > volume.getDimY() - 1
+                || dz < 0 || dz > volume.getDimZ() - 1) {
+            // If not, jus return 0
+            return 0;
+        }
+        
+        int lx = (int) Math.floor(dx);
+        int ly = (int) Math.floor(dy);
+        int lz = (int) Math.floor(dz);
+         
+        int ux = (int) Math.ceil(dx);
+        int uy = (int) Math.ceil(dy);
+        int uz = (int) Math.ceil(dz);
+        
+        double alpha = (dx - lx) / (ux - lx);
+        double beta = (dy - ly) / (uy - ly);
+        double gamma = (dz - lz) / (uz - lz);
+        
+        short v0 = volume.getVoxel(lx, ly, lz);
+        short v1 = volume.getVoxel(ux, ly, lz);
+        short v2 = volume.getVoxel(lx, uy, lz);
+        short v3 = volume.getVoxel(ux, uy, lz);
+        short v4 = volume.getVoxel(lx, ly, uz);
+        short v5 = volume.getVoxel(ux, ly, uz);
+        short v6 = volume.getVoxel(lx, uy, uz);
+        short v7 = volume.getVoxel(ux, uy, uz);
+        
+        short v = (short) ((1 - alpha) * (1 - beta) * (1 - gamma) * v0 + alpha * (1 - beta) * (1 - gamma) * v1
+                + (1 - alpha) * beta * (1 - gamma) * v2 + alpha * beta * (1 - gamma) * v3
+                + (1 - alpha) * (1 - beta) * gamma * v4 + alpha * (1 - beta) * gamma * v5
+                + (1 - alpha) * beta * gamma * v6 + alpha * beta * gamma * v7);
+        return v;
     }
 
     /**
@@ -270,9 +307,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 // computes the pixelCoord which contains the 3D coordinates of the pixels (i,j)
                 computePixelCoordinatesFloat(pixelCoord, volumeCenter, uVec, vVec, i, j);
 
-                int val = getVoxel(pixelCoord);
+//                int val = getVoxel(pixelCoord);
                 //NOTE: you have to implement this function to get the tri-linear interpolation
-                //int val = getVoxelTrilinear(pixelCoord);
+                int val = getVoxelTrilinear(pixelCoord);
 
                 // Map the intensity to a grey value by linear scaling
                 pixelColor.r = val / max;
