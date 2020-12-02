@@ -665,6 +665,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         // reset the image to black
         resetImage();
+        this.setInteractiveMode(true);
 
         // vector uVec and vVec define a plane through the origin,
         // perpendicular to the view vector viewVec which is going from the view point towards the object
@@ -726,6 +727,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
             }
         }
+        this.setInteractiveMode(false);
     }
 
     /**
