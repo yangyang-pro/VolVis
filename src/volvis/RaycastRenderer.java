@@ -460,11 +460,20 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double[] currentPos = new double[3];
         VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
 
+        TFColor voxel_color = new TFColor();
         boolean iso = false;
         do {
             double value = getVoxel(currentPos) / 1.0;
             if (value >= isoValueFront) {
                 iso = true;
+                if (shadingMode){
+                    voxel_color = computePhongShading(isoColorFront, getGradientTrilinear(currentPos), lightVector, rayVector);
+                    r = voxel_color.r;
+                    g = voxel_color.g;
+                    b = voxel_color.b;
+                    alpha = voxel_color.a;
+                    return computePackedPixelColor(r, g, b, alpha);
+                }
                 break;
             }
             for (int i = 0; i < 3; i++) {
@@ -586,7 +595,43 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         // TODO 7: Implement Phong Shading.
         TFColor color = new TFColor(0, 0, 0, 1);
-
+        
+        double k_ambient = 0.1;
+        double k_diffuse = 0.7;
+        double k_specular = 0.2;
+        int n = 100;
+        double[] normedLightVector = new double[3];
+        VectorMath.setVector(normedLightVector, 
+                VectorMath.length(lightVector) > 0 ? lightVector[0] / VectorMath.length(lightVector) : 0, 
+                VectorMath.length(lightVector) > 0 ? lightVector[1] / VectorMath.length(lightVector) : 0, 
+                VectorMath.length(lightVector) > 0 ? lightVector[2] / VectorMath.length(lightVector) : 0);
+        double[] normedRayVector = new double[3];
+        VectorMath.setVector(normedRayVector, 
+                VectorMath.length(rayVector) > 0 ? rayVector[0] / VectorMath.length(rayVector) : 0, 
+                VectorMath.length(rayVector) > 0 ? rayVector[1] / VectorMath.length(rayVector) : 0, 
+                VectorMath.length(rayVector) > 0 ? rayVector[2] / VectorMath.length(rayVector) : 0);
+        
+        double normedX, normedY, normedZ;
+        normedX = gradient.mag > 0 ? gradient.x / gradient.mag : 0;
+        normedY = gradient.mag > 0 ? gradient.y / gradient.mag : 0;
+        normedZ = gradient.mag > 0 ? gradient.z / gradient.mag : 0;
+        double[] normedGradient = new double[3];
+        VectorMath.setVector(normedGradient, normedX, normedY, normedZ);
+        
+        double[] halfway = new double[3];
+        VectorMath.setVector(halfway, normedRayVector[0] + normedLightVector[0], 
+                normedRayVector[1] + normedLightVector[1], 
+                normedRayVector[2] + normedLightVector[2]);
+        double[] normedHalfway = new double[3];
+        normedHalfway = VectorMath.normalize(halfway, normedHalfway);
+        
+        double diffuse_term = Math.max(VectorMath.dotproduct(normedLightVector, normedGradient), 0);
+        double specular_term = Math.max(VectorMath.dotproduct(normedGradient, normedHalfway), 0);
+        
+        color.r = voxel_color.r * (k_ambient + k_diffuse * diffuse_term + k_specular * Math.pow(specular_term, n));
+        color.g = voxel_color.g * (k_ambient + k_diffuse * diffuse_term + k_specular * Math.pow(specular_term, n));
+        color.b = voxel_color.b * (k_ambient + k_diffuse * diffuse_term + k_specular * Math.pow(specular_term, n));
+        color.a = voxel_color.a;
         return color;
     }
 
