@@ -193,11 +193,11 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         int lx = (int) Math.floor(dx);
         int ly = (int) Math.floor(dy);
         int lz = (int) Math.floor(dz);
-         
+        
         int ux = (int) Math.ceil(dx);
         int uy = (int) Math.ceil(dy);
         int uz = (int) Math.ceil(dz);
-        
+         
         double alpha = (dx - lx) / (ux - lx);
         double beta = (dy - ly) / (uy - ly);
         double gamma = (dz - lz) / (uz - lz);
@@ -259,8 +259,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double dx = coord[0], dy = coord[1], dz = coord[2];
 
         // Verify they are inside the volume gradient
-        if (dx < 0 || dx > (gradients.getDimX() - 2) || dy < 0 || dy > (gradients.getDimY() - 2)
-                || dz < 0 || dz > (gradients.getDimZ() - 2)) {
+        if (dx < 0 || dx > (gradients.getDimX() - 1) || dy < 0 || dy > (gradients.getDimY() - 1)
+                || dz < 0 || dz > (gradients.getDimZ() - 1)) {
             // If not, just return a zero gradient
             return ZERO_GRADIENT;
         }
@@ -544,7 +544,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 do {
                     val = getVoxelTrilinear(currentPos);
                     voxel_color = tFuncFront.getColor(val);
-                    
+                    if (shadingMode)
+                        voxel_color = computePhongShading(voxel_color, getGradientTrilinear(currentPos), lightVector, rayVector);
                     alpha = (1 - voxel_color.a) * alpha + voxel_color.a;
                     r = voxel_color.a * voxel_color.r + (1 - voxel_color.a) * r;
                     g = voxel_color.a * voxel_color.g + (1 - voxel_color.a) * g;
@@ -558,21 +559,24 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 break;
             case TRANSFER2D:
                 // 2D transfer function 
-                voxel_color.r = 0;
-                voxel_color.g = 1;
-                voxel_color.b = 0;
-                voxel_color.a = 1;
-                opacity = 1;
+                val = 0;
+                do {
+                    val = getVoxelTrilinear(currentPos);
+                    voxel_color = tFunc2DFront.color;
+                    if (shadingMode)
+                        voxel_color = computePhongShading(voxel_color, getGradientTrilinear(currentPos), lightVector, rayVector);
+                    opacity = computeOpacity2DTF(tFunc2DFront.baseIntensity, tFunc2DFront.radius, val, getGradientTrilinear(currentPos).mag);
+                    alpha = (1 - opacity) * alpha + opacity;
+                    r = opacity * voxel_color.r + (1 - opacity) * r;
+                    g = opacity * voxel_color.g + (1 - opacity) * g;
+                    b = opacity * voxel_color.b + (1 - opacity) * b;
+                    
+                    for (int i = 0; i < 3; i++) {
+                        currentPos[i] += increments[i];
+                    }
+                    nrSamples--;
+                } while (nrSamples > 0);
                 break;
-        }
-
-        if (shadingMode) {
-            // Shading mode on
-            voxel_color.r = 1;
-            voxel_color.g = 0;
-            voxel_color.b = 1;
-            voxel_color.a = 1;
-            opacity = 1;
         }
 
         //computes the color
@@ -601,15 +605,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double k_specular = 0.2;
         int n = 100;
         double[] normedLightVector = new double[3];
-        VectorMath.setVector(normedLightVector, 
-                VectorMath.length(lightVector) > 0 ? lightVector[0] / VectorMath.length(lightVector) : 0, 
-                VectorMath.length(lightVector) > 0 ? lightVector[1] / VectorMath.length(lightVector) : 0, 
-                VectorMath.length(lightVector) > 0 ? lightVector[2] / VectorMath.length(lightVector) : 0);
+        normedLightVector = VectorMath.normalize(lightVector, normedLightVector);
         double[] normedRayVector = new double[3];
-        VectorMath.setVector(normedRayVector, 
-                VectorMath.length(rayVector) > 0 ? rayVector[0] / VectorMath.length(rayVector) : 0, 
-                VectorMath.length(rayVector) > 0 ? rayVector[1] / VectorMath.length(rayVector) : 0, 
-                VectorMath.length(rayVector) > 0 ? rayVector[2] / VectorMath.length(rayVector) : 0);
+        normedRayVector = VectorMath.normalize(rayVector, normedRayVector);
         
         double normedX, normedY, normedZ;
         normedX = gradient.mag > 0 ? gradient.x / gradient.mag : 0;
@@ -625,9 +623,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double[] normedHalfway = new double[3];
         normedHalfway = VectorMath.normalize(halfway, normedHalfway);
         
-        double diffuse_term = Math.max(VectorMath.dotproduct(normedLightVector, normedGradient), 0);
-        double specular_term = Math.max(VectorMath.dotproduct(normedGradient, normedHalfway), 0);
-        
+        double diffuse_term = Math.max(VectorMath.dotproduct(normedLightVector, normedGradient), -VectorMath.dotproduct(normedLightVector, normedGradient));
+        double specular_term = Math.max(VectorMath.dotproduct(normedGradient, normedHalfway), -VectorMath.dotproduct(normedGradient, normedHalfway));
         color.r = voxel_color.r * (k_ambient + k_diffuse * diffuse_term + k_specular * Math.pow(specular_term, n));
         color.g = voxel_color.g * (k_ambient + k_diffuse * diffuse_term + k_specular * Math.pow(specular_term, n));
         color.b = voxel_color.b * (k_ambient + k_diffuse * diffuse_term + k_specular * Math.pow(specular_term, n));
@@ -737,8 +734,19 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             double voxelValue, double gradMagnitude) {
 
         double opacity = 0.0;
-
+        double radius = material_r / gradients.getMaxGradientMagnitude();
+        
         // TODO 8: Implement weight based opacity.
+        if (gradMagnitude == 0 && voxelValue == material_value){
+            opacity = tFunc2DFront.color.a;
+        }
+        else if (gradMagnitude >= 0 && voxelValue - radius * gradMagnitude <= material_value
+                && voxelValue + radius * gradMagnitude >= material_value){
+            opacity = tFunc2DFront.color.a * (1 - (1 / radius) * Math.abs((material_value - voxelValue) / gradMagnitude));
+        }
+        else {
+            opacity = 0;
+        }
         return opacity;
     }
 
