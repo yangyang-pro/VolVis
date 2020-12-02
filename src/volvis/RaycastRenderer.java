@@ -568,11 +568,18 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         if (shadingMode) {
             // Shading mode on
-            voxel_color.r = 1;
-            voxel_color.g = 0;
-            voxel_color.b = 1;
-            voxel_color.a = 1;
-            opacity = 1;
+//            int val = traceRayIso(entryPoint, exitPoint, rayVector, sampleStep);
+//            voxel_color = tFuncFront.getColor(val);
+//            r = voxel_color.r;
+//            g = voxel_color.g;
+//            b = voxel_color.b;
+//            alpha = voxel_color.a;
+              return traceRayIso(entryPoint, exitPoint, rayVector, sampleStep);
+//            voxel_color.r = 1;
+//            voxel_color.g = 0;
+//            voxel_color.b = 1;
+//            voxel_color.a = 1;
+//            opacity = 1;
         }
 
         //computes the color
