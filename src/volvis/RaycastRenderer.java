@@ -277,9 +277,13 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         int uy = (int) Math.ceil(dy);
         int uz = (int) Math.ceil(dz);
         
-        double alpha = (dx - lx) / (ux - lx);
-        double beta = (dy - ly) / (uy - ly);
-        double gamma = (dz - lz) / (uz - lz);
+//        double alpha = (dx - lx) / (ux - lx);
+//        double beta = (dy - ly) / (uy - ly);
+//        double gamma = (dz - lz) / (uz - lz);
+        double alpha = dx - lx;
+        double beta = dy - ly;
+        double gamma = dz - lz;
+
         
         VoxelGradient g0 = gradients.getGradient(lx, ly, lz);
         VoxelGradient g1 = gradients.getGradient(ux, ly, lz);
