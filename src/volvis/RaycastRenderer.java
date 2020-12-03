@@ -700,11 +700,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double[] exitPoint = new double[3];
 
         // TODO 5: Limited modification is needed
-        this.setInteractiveMode(true);
         // increment in the pixel domain in pixel units
-        int increment = 1;
+        int increment = interactiveMode ? 3 : 1;
         // sample step in voxel units
-        int sampleStep = 1;
+        int sampleStep = interactiveMode ? 3 : 1;
 
         // reset the image to black
         resetImage();
@@ -789,7 +788,6 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
             }
         }
-        this.setInteractiveMode(false);
     }
 
     /**
