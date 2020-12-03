@@ -747,7 +747,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 // TODO 9: Implement logic for cutting plane.
                 if ((entryPoint[0] > -1.0) && (exitPoint[0] > -1.0)) {
                     int val = 0;
-                    if (isCuttingPlaneMode() && VectorMath.dotproduct(pixelCoord, planeNorm) > 0) {
+                    double[] vecPixel = new double[3];
+                    vecPixel = VectorMath.difference(pixelCoord, planePoint, vecPixel);
+                    if (isCuttingPlaneMode() && VectorMath.dotproduct(vecPixel, planeNorm) > 0) {
                         isBack = true;
                         switch (modeBack) {
                             case COMPOSITING:
