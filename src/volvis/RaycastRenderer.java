@@ -464,7 +464,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         TFColor voxel_color = new TFColor();
         boolean iso = false;
         do {
-            double value = getVoxel(currentPos) / 1.0;
+            double value = getVoxelTrilinear(currentPos) / 1.0;
             float isoValue = isBack ? isoValueBack : isoValueFront;
             if (value >= isoValue) {
                 iso = true;
@@ -675,8 +675,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double[] normedHalfway = new double[3];
         normedHalfway = VectorMath.normalize(halfway, normedHalfway);
         
-        double diffuse_term = Math.max(VectorMath.dotproduct(normedLightVector, normedGradient), -VectorMath.dotproduct(normedLightVector, normedGradient));
-        double specular_term = Math.max(VectorMath.dotproduct(normedGradient, normedHalfway), -VectorMath.dotproduct(normedGradient, normedHalfway));
+        double diffuse_term = Math.abs(VectorMath.dotproduct(normedLightVector, normedGradient));
+        double specular_term = Math.abs(VectorMath.dotproduct(normedGradient, normedHalfway));
         color.r = voxel_color.r * (k_ambient + k_diffuse * diffuse_term + k_specular * Math.pow(specular_term, n));
         color.g = voxel_color.g * (k_ambient + k_diffuse * diffuse_term + k_specular * Math.pow(specular_term, n));
         color.b = voxel_color.b * (k_ambient + k_diffuse * diffuse_term + k_specular * Math.pow(specular_term, n));
