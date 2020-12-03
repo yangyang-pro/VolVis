@@ -140,7 +140,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * Constant Zero gradient.
      */
     private final static VoxelGradient ZERO_GRADIENT = new VoxelGradient();
-
+    
+    private boolean isBack = false;
     /**
      * Gets the corresponding voxel using Nearest Neighbors.
      *
@@ -464,10 +465,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         boolean iso = false;
         do {
             double value = getVoxel(currentPos) / 1.0;
-            if (value >= isoValueFront) {
+            float isoValue = isBack ? isoValueBack : isoValueFront;
+            if (value >= isoValue) {
                 iso = true;
                 if (shadingMode){
-                    voxel_color = computePhongShading(isoColorFront, getGradientTrilinear(currentPos), lightVector, rayVector);
+                    if (isBack) voxel_color = computePhongShading(isoColorBack, getGradientTrilinear(currentPos), lightVector, rayVector);
+                    else voxel_color = computePhongShading(isoColorFront, getGradientTrilinear(currentPos), lightVector, rayVector);
                     r = voxel_color.r;
                     g = voxel_color.g;
                     b = voxel_color.b;
@@ -483,9 +486,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         } while (nrSamples > 0);
         
         // isoColorFront contains the isosurface color from the GUI
-        r = isoColorFront.r;
-        g = isoColorFront.g;
-        b = isoColorFront.b;
+        r = isBack ? isoColorBack.r : isoColorFront.r;
+        g = isBack ? isoColorBack.g : isoColorFront.g;
+        b = isBack ? isoColorBack.b : isoColorFront.b;
         if (iso == false) alpha = 0;
         else alpha = 1;
         //computes the color
@@ -537,48 +540,97 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         VectorMath.setVector(currentPos, entryPoint[0], entryPoint[1], entryPoint[2]);
         
         // TODO 2: To be Implemented this function. Now, it just gives back a constant color depending on the mode
-        switch (modeFront) {
-            case COMPOSITING:
-                // 1D transfer function 
-                int val = 0;
-                do {
-                    val = getVoxelTrilinear(currentPos);
-                    voxel_color = tFuncFront.getColor(val);
-                    if (shadingMode)
-                        voxel_color = computePhongShading(voxel_color, getGradientTrilinear(currentPos), lightVector, rayVector);
-                    alpha = (1 - voxel_color.a) * alpha + voxel_color.a;
-                    r = voxel_color.a * voxel_color.r + (1 - voxel_color.a) * r;
-                    g = voxel_color.a * voxel_color.g + (1 - voxel_color.a) * g;
-                    b = voxel_color.a * voxel_color.b + (1 - voxel_color.a) * b;
-                    
-                    for (int i = 0; i < 3; i++) {
-                        currentPos[i] += increments[i];
-                    }
-                    nrSamples--;
-                } while (nrSamples > 0);
-                break;
-            case TRANSFER2D:
-                // 2D transfer function 
-                val = 0;
-                do {
-                    val = getVoxelTrilinear(currentPos);
-                    voxel_color = tFunc2DFront.color;
-                    if (shadingMode)
-                        voxel_color = computePhongShading(voxel_color, getGradientTrilinear(currentPos), lightVector, rayVector);
-                    opacity = computeOpacity2DTF(tFunc2DFront.baseIntensity, tFunc2DFront.radius, val, getGradientTrilinear(currentPos).mag);
-                    alpha = (1 - opacity) * alpha + opacity;
-                    r = opacity * voxel_color.r + (1 - opacity) * r;
-                    g = opacity * voxel_color.g + (1 - opacity) * g;
-                    b = opacity * voxel_color.b + (1 - opacity) * b;
-                    
-                    for (int i = 0; i < 3; i++) {
-                        currentPos[i] += increments[i];
-                    }
-                    nrSamples--;
-                } while (nrSamples > 0);
-                break;
-        }
+        if (isBack) {
+            switch (modeBack) {
+                case COMPOSITING:
+                    // 1D transfer function 
+                    int val = 0;
+                    do {
+                        val = getVoxelTrilinear(currentPos);
+                        voxel_color = tFuncBack.getColor(val);
+                        if (shadingMode) {
+                            voxel_color = computePhongShading(voxel_color, getGradientTrilinear(currentPos), lightVector, rayVector);
+                        }
+                        alpha = (1 - voxel_color.a) * alpha + voxel_color.a;
+                        r = voxel_color.a * voxel_color.r + (1 - voxel_color.a) * r;
+                        g = voxel_color.a * voxel_color.g + (1 - voxel_color.a) * g;
+                        b = voxel_color.a * voxel_color.b + (1 - voxel_color.a) * b;
 
+                        for (int i = 0; i < 3; i++) {
+                            currentPos[i] += increments[i];
+                        }
+                        nrSamples--;
+                    } while (nrSamples > 0);
+                    break;
+                case TRANSFER2D:
+                    // 2D transfer function 
+                    val = 0;
+                    do {
+                        val = getVoxelTrilinear(currentPos);
+                        voxel_color = tFunc2DBack.color;
+                        if (shadingMode) {
+                            voxel_color = computePhongShading(voxel_color, getGradientTrilinear(currentPos), lightVector, rayVector);
+                        }
+                        opacity = computeOpacity2DTF(tFunc2DBack.baseIntensity, tFunc2DBack.radius, val, getGradientTrilinear(currentPos).mag);
+                        alpha = (1 - opacity) * alpha + opacity;
+                        r = opacity * voxel_color.r + (1 - opacity) * r;
+                        g = opacity * voxel_color.g + (1 - opacity) * g;
+                        b = opacity * voxel_color.b + (1 - opacity) * b;
+
+                        for (int i = 0; i < 3; i++) {
+                            currentPos[i] += increments[i];
+                        }
+                        nrSamples--;
+                    } while (nrSamples > 0);
+                    break;
+            }
+        }
+        else {
+            switch (modeFront) {
+                case COMPOSITING:
+                    // 1D transfer function 
+                    int val = 0;
+                    do {
+                        val = getVoxelTrilinear(currentPos);
+                        voxel_color = tFuncFront.getColor(val);
+                        if (shadingMode) {
+                            voxel_color = computePhongShading(voxel_color, getGradientTrilinear(currentPos), lightVector, rayVector);
+                        }
+                        alpha = (1 - voxel_color.a) * alpha + voxel_color.a;
+                        r = voxel_color.a * voxel_color.r + (1 - voxel_color.a) * r;
+                        g = voxel_color.a * voxel_color.g + (1 - voxel_color.a) * g;
+                        b = voxel_color.a * voxel_color.b + (1 - voxel_color.a) * b;
+
+                        for (int i = 0; i < 3; i++) {
+                            currentPos[i] += increments[i];
+                        }
+                        nrSamples--;
+                    } while (nrSamples > 0);
+                    break;
+                case TRANSFER2D:
+                    // 2D transfer function 
+                    val = 0;
+                    do {
+                        val = getVoxelTrilinear(currentPos);
+                        voxel_color = tFunc2DFront.color;
+                        if (shadingMode) {
+                            voxel_color = computePhongShading(voxel_color, getGradientTrilinear(currentPos), lightVector, rayVector);
+                        }
+                        opacity = computeOpacity2DTF(tFunc2DFront.baseIntensity, tFunc2DFront.radius, val, getGradientTrilinear(currentPos).mag);
+                        alpha = (1 - opacity) * alpha + opacity;
+                        r = opacity * voxel_color.r + (1 - opacity) * r;
+                        g = opacity * voxel_color.g + (1 - opacity) * g;
+                        b = opacity * voxel_color.b + (1 - opacity) * b;
+
+                        for (int i = 0; i < 3; i++) {
+                            currentPos[i] += increments[i];
+                        }
+                        nrSamples--;
+                    } while (nrSamples > 0);
+                    break;
+            }
+        }
+        
         //computes the color
         int color = computePackedPixelColor(r, g, b, alpha);
         return color;
@@ -695,17 +747,35 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 // TODO 9: Implement logic for cutting plane.
                 if ((entryPoint[0] > -1.0) && (exitPoint[0] > -1.0)) {
                     int val = 0;
-                    switch (modeFront) {
-                        case COMPOSITING:
-                        case TRANSFER2D:
-                            val = traceRayComposite(entryPoint, exitPoint, rayVector, sampleStep);
-                            break;
-                        case MIP:
-                            val = traceRayMIP(entryPoint, exitPoint, rayVector, sampleStep);
-                            break;
-                        case ISO_SURFACE:
-                            val = traceRayIso(entryPoint, exitPoint, rayVector, sampleStep);
-                            break;
+                    if (isCuttingPlaneMode() && VectorMath.dotproduct(pixelCoord, planeNorm) > 0) {
+                        isBack = true;
+                        switch (modeBack) {
+                            case COMPOSITING:
+                            case TRANSFER2D:
+                                val = traceRayComposite(entryPoint, exitPoint, rayVector, sampleStep);
+                                break;
+                            case MIP:
+                                val = traceRayMIP(entryPoint, exitPoint, rayVector, sampleStep);
+                                break;
+                            case ISO_SURFACE:
+                                val = traceRayIso(entryPoint, exitPoint, rayVector, sampleStep);
+                                break;
+                        }
+                    }
+                    else {
+                        isBack = false;
+                        switch (modeFront) {
+                            case COMPOSITING:
+                            case TRANSFER2D:
+                                val = traceRayComposite(entryPoint, exitPoint, rayVector, sampleStep);
+                                break;
+                            case MIP:
+                                val = traceRayMIP(entryPoint, exitPoint, rayVector, sampleStep);
+                                break;
+                            case ISO_SURFACE:
+                                val = traceRayIso(entryPoint, exitPoint, rayVector, sampleStep);
+                                break;
+                        }
                     }
                     for (int ii = i; ii < i + increment; ii++) {
                         for (int jj = j; jj < j + increment; jj++) {
@@ -735,14 +805,15 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         double opacity = 0.0;
         double radius = material_r / gradients.getMaxGradientMagnitude();
+        double input_alpha = isBack ? tFunc2DBack.color.a : tFunc2DFront.color.a;
         
         // TODO 8: Implement weight based opacity.
         if (gradMagnitude == 0 && voxelValue == material_value){
-            opacity = tFunc2DFront.color.a;
+            opacity = input_alpha;
         }
         else if (gradMagnitude >= 0 && voxelValue - radius * gradMagnitude <= material_value
                 && voxelValue + radius * gradMagnitude >= material_value){
-            opacity = tFunc2DFront.color.a * (1 - (1 / radius) * Math.abs((material_value - voxelValue) / gradMagnitude));
+            opacity = input_alpha * (1 - (1 / radius) * Math.abs((material_value - voxelValue) / gradMagnitude));
         }
         else {
             opacity = 0;
