@@ -199,9 +199,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         int uy = (int) Math.ceil(dy);
         int uz = (int) Math.ceil(dz);
          
-        double alpha = (dx - lx) / (ux - lx);
-        double beta = (dy - ly) / (uy - ly);
-        double gamma = (dz - lz) / (uz - lz);
+//        double alpha = (dx - lx) / (ux - lx);
+//        double beta = (dy - ly) / (uy - ly);
+//        double gamma = (dz - lz) / (uz - lz);
+        double alpha = dx - lx;
+        double beta = dy - ly;
+        double gamma = dz - lz;
         
         short v0 = volume.getVoxel(lx, ly, lz);
         short v1 = volume.getVoxel(ux, ly, lz);
@@ -353,7 +356,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                 // computes the pixelCoord which contains the 3D coordinates of the pixels (i,j)
                 computePixelCoordinatesFloat(pixelCoord, volumeCenter, uVec, vVec, i, j);
 
-//                int val = getVoxel(pixelCoord);
+                //int val = getVoxel(pixelCoord);
                 //NOTE: you have to implement this function to get the tri-linear interpolation
                 int val = getVoxelTrilinear(pixelCoord);
 
@@ -464,7 +467,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         TFColor voxel_color = new TFColor();
         boolean iso = false;
         do {
-            double value = getVoxel(currentPos) / 1.0;
+            double value = getVoxelTrilinear(currentPos) / 1.0;
             float isoValue = isBack ? isoValueBack : isoValueFront;
             if (value >= isoValue) {
                 iso = true;
