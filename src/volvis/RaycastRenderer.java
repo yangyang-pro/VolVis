@@ -401,7 +401,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         double maximum = 0;
         do {
-            double value = getVoxel(currentPos) / 255.;
+            double value = getVoxelTrilinear(currentPos) / 255.;
             if (value > maximum) {
                 maximum = value;
             }
@@ -701,9 +701,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         // TODO 5: Limited modification is needed
         // increment in the pixel domain in pixel units
-        int increment = interactiveMode ? 3 : 1;
+        int increment = interactiveMode ? 5 : 1;
         // sample step in voxel units
-        int sampleStep = interactiveMode ? 3 : 1;
+        int sampleStep = interactiveMode ? 5 : 1;
 
         // reset the image to black
         resetImage();
@@ -779,8 +779,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                                 break;
                         }
                     }
-                    for (int ii = i; ii < i + increment; ii++) {
-                        for (int jj = j; jj < j + increment; jj++) {
+                    for (int ii = i; ii < imageW && ii < i + increment; ii++) {
+                        for (int jj = j; jj < imageH && jj < j + increment; jj++) {
                             image.setRGB(ii, jj, val);
                         }
                     }
