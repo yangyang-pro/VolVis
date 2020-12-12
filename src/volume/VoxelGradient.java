@@ -12,9 +12,11 @@ public class VoxelGradient {
 
     public float x, y, z;
     public float mag;
+    public double secDeri;
     
     public VoxelGradient() {
         x = y = z = mag = 0.0f;
+        secDeri = 0.0;
     }
     
     public VoxelGradient(float gx, float gy, float gz) {

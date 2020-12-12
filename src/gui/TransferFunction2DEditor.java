@@ -75,9 +75,11 @@ public class TransferFunction2DEditor extends javax.swing.JPanel {
     private void compute2Dhistogram() {
         maxIntensity = vol.getMaximum();
         maxGradientMagnitude = gradvol.getMaxGradientMagnitude();
+        double maxSecDeri = gradvol.getMaxSecDeri();
 
         System.out.println("maxIntensity = " + maxIntensity);
         System.out.println("max gradient = " + maxGradientMagnitude);
+        System.out.println("max second derivative = " + maxSecDeri);
 
         xbins = maxIntensity + 1;
         ybins = 300;
@@ -88,6 +90,9 @@ public class TransferFunction2DEditor extends javax.swing.JPanel {
             short voxelVal = vol.getVoxel(i);
             VoxelGradient grad = gradvol.getVoxel(i);
             int yPos = (int) Math.floor(((ybins - 1) * grad.mag) / maxGradientMagnitude);
+//            int yPos = (int) Math.floor(((ybins - 1) * grad.secDeri) / maxSecDeri);
+//            int yPos = 1;
+//            System.out.println("yPos: " + grad.secDeri);
             histogram[yPos * xbins + voxelVal] += 1;
         }
     }
