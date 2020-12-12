@@ -78,7 +78,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     /**
      * Whether we are in shading mode or not.
      */
-    private boolean shadingMode = false;
+    private boolean phongShadingMode = false;
+
+    private boolean toneShadingMode = false;
 
     /**
      * Iso value to use in Isosurface rendering.
@@ -140,8 +142,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      * Constant Zero gradient.
      */
     private final static VoxelGradient ZERO_GRADIENT = new VoxelGradient();
-    
+
     private boolean isBack = false;
+
     /**
      * Gets the corresponding voxel using Nearest Neighbors.
      *
@@ -179,30 +182,30 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     private short getVoxelTrilinear(double[] coord) {
         // TODO 1: Implement Tri-Linear interpolation and use it in your code
         // instead of getVoxel().
-        
+
         double dx = coord[0];
         double dy = coord[1];
         double dz = coord[2];
-        
+
         // Verify they are inside the volume
         if (dx < 0 || dx > volume.getDimX() - 1 || dy < 0 || dy > volume.getDimY() - 1
                 || dz < 0 || dz > volume.getDimZ() - 1) {
             // If not, jus return 0
             return 0;
         }
-        
+
         int lx = (int) Math.floor(dx);
         int ly = (int) Math.floor(dy);
         int lz = (int) Math.floor(dz);
-        
+
         int ux = (int) Math.ceil(dx);
         int uy = (int) Math.ceil(dy);
         int uz = (int) Math.ceil(dz);
-        
+
         double alpha = dx - lx;
         double beta = dy - ly;
         double gamma = dz - lz;
-        
+
         short v0 = volume.getVoxel(lx, ly, lz);
         short v1 = volume.getVoxel(ux, ly, lz);
         short v2 = volume.getVoxel(lx, uy, lz);
@@ -211,7 +214,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         short v5 = volume.getVoxel(ux, ly, uz);
         short v6 = volume.getVoxel(lx, uy, uz);
         short v7 = volume.getVoxel(ux, uy, uz);
-        
+
         short v = (short) ((1 - alpha) * (1 - beta) * (1 - gamma) * v0 + alpha * (1 - beta) * (1 - gamma) * v1
                 + (1 - alpha) * beta * (1 - gamma) * v2 + alpha * beta * (1 - gamma) * v3
                 + (1 - alpha) * (1 - beta) * gamma * v4 + alpha * (1 - beta) * gamma * v5
@@ -255,7 +258,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      */
     private VoxelGradient getGradientTrilinear(double[] coord) {
         // TODO 6: Implement Tri-linear interpolation for gradients
-        
+
         // Get the coordinates
         double dx = coord[0], dy = coord[1], dz = coord[2];
 
@@ -265,19 +268,19 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             // If not, just return a zero gradient
             return ZERO_GRADIENT;
         }
-        
+
         int lx = (int) Math.floor(dx);
         int ly = (int) Math.floor(dy);
         int lz = (int) Math.floor(dz);
-        
+
         int ux = (int) Math.ceil(dx);
         int uy = (int) Math.ceil(dy);
         int uz = (int) Math.ceil(dz);
-        
+
         double alpha = dx - lx;
         double beta = dy - ly;
         double gamma = dz - lz;
-        
+
         VoxelGradient g0 = gradients.getGradient(lx, ly, lz);
         VoxelGradient g1 = gradients.getGradient(ux, ly, lz);
         VoxelGradient g2 = gradients.getGradient(lx, uy, lz);
@@ -286,7 +289,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         VoxelGradient g5 = gradients.getGradient(ux, ly, uz);
         VoxelGradient g6 = gradients.getGradient(lx, uy, uz);
         VoxelGradient g7 = gradients.getGradient(ux, uy, uz);
-        
+
         double x, y, z;
         x = (1 - alpha) * (1 - beta) * (1 - gamma) * g0.x + alpha * (1 - beta) * (1 - gamma) * g1.x
                 + (1 - alpha) * beta * (1 - gamma) * g2.x + alpha * beta * (1 - gamma) * g3.x
@@ -448,7 +451,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         r = g = b = 0.0;
         double alpha = 0.0;
         double opacity = 0;
-        
+
         //compute the increment and the number of samples
         double[] increments = new double[3];
         VectorMath.setVector(increments, rayVector[0] * sampleStep, rayVector[1] * sampleStep, rayVector[2] * sampleStep);
@@ -468,9 +471,23 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             float isoValue = isBack ? isoValueBack : isoValueFront;
             if (value >= isoValue) {
                 iso = true;
-                if (shadingMode){
-                    if (isBack) voxel_color = computePhongShading(isoColorBack, getGradientTrilinear(currentPos), lightVector, rayVector);
-                    else voxel_color = computePhongShading(isoColorFront, getGradientTrilinear(currentPos), lightVector, rayVector);
+                if (phongShadingMode) {
+                    if (isBack) {
+                        voxel_color = computePhongShading(isoColorBack, getGradientTrilinear(currentPos), lightVector, rayVector);
+                    } else {
+                        voxel_color = computePhongShading(isoColorFront, getGradientTrilinear(currentPos), lightVector, rayVector);
+                    }
+                    r = voxel_color.r;
+                    g = voxel_color.g;
+                    b = voxel_color.b;
+                    alpha = voxel_color.a;
+                    return computePackedPixelColor(r, g, b, alpha);
+                } else if (toneShadingMode) {
+                    if (isBack) {
+                        voxel_color = computeToneShading(isoColorBack, getGradientTrilinear(currentPos), lightVector, rayVector);
+                    } else {
+                        voxel_color = computeToneShading(isoColorFront, getGradientTrilinear(currentPos), lightVector, rayVector);
+                    }
                     r = voxel_color.r;
                     g = voxel_color.g;
                     b = voxel_color.b;
@@ -484,13 +501,16 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             }
             nrSamples--;
         } while (nrSamples > 0);
-        
+
         // isoColorFront contains the isosurface color from the GUI
         r = isBack ? isoColorBack.r : isoColorFront.r;
         g = isBack ? isoColorBack.g : isoColorFront.g;
         b = isBack ? isoColorBack.b : isoColorFront.b;
-        if (iso == false) alpha = 0;
-        else alpha = 1;
+        if (iso == false) {
+            alpha = 0;
+        } else {
+            alpha = 1;
+        }
         //computes the color
         int color = computePackedPixelColor(r, g, b, alpha);
         return color;
@@ -526,7 +546,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         TFColor voxel_color = new TFColor();
         TFColor colorAux = new TFColor();
-        
+
         //compute the increment and the number of samples
         double[] increments = new double[3];
         VectorMath.setVector(increments, rayVector[0] * sampleStep, rayVector[1] * sampleStep, rayVector[2] * sampleStep);
@@ -538,7 +558,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         //the current position is initialized as the entry point
         double[] currentPos = new double[3];
         VectorMath.setVector(currentPos, exitPoint[0], exitPoint[1], exitPoint[2]);
-        
+
         // TODO 2: To be Implemented this function. Now, it just gives back a constant color depending on the mode
         int val = 0;
         do {
@@ -553,7 +573,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     case TRANSFER2D:
                         // 2D transfer function 
                         voxel_color = tFunc2DBack.color;
-                        opacity = computeOpacity2DTF(tFunc2DBack.baseIntensity, 
+                        opacity = computeOpacity2DTF(tFunc2DBack.baseIntensity,
                                 tFunc2DBack.radius, val, getGradientTrilinear(currentPos).mag);
                         break;
                 }
@@ -567,13 +587,15 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     case TRANSFER2D:
                         // 2D transfer function
                         voxel_color = tFunc2DFront.color;
-                        opacity = computeOpacity2DTF(tFunc2DFront.baseIntensity, 
+                        opacity = computeOpacity2DTF(tFunc2DFront.baseIntensity,
                                 tFunc2DFront.radius, val, getGradientTrilinear(currentPos).mag);
                         break;
                 }
             }
-            if (shadingMode) {
+            if (phongShadingMode) {
                 voxel_color = computePhongShading(voxel_color, getGradientTrilinear(currentPos), lightVector, rayVector);
+            } else if (toneShadingMode) {
+                voxel_color = computeToneShading(voxel_color, getGradientTrilinear(currentPos), lightVector, rayVector);
             }
             r = opacity * voxel_color.r + (1 - opacity) * r;
             g = opacity * voxel_color.g + (1 - opacity) * g;
@@ -585,7 +607,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             }
             nrSamples--;
         } while (nrSamples > 0);
-        
+
         //computes the color
         int color = computePackedPixelColor(r, g, b, alpha);
         return color;
@@ -606,8 +628,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         // TODO 7: Implement Phong Shading.
         TFColor color = new TFColor(0, 0, 0, 1);
-        
-        double k_ambient = 0.1;
+
+        double k_ambient = 0.2;
         double k_diffuse = 0.7;
         double k_specular = 0.2;
         int n = 100;
@@ -615,26 +637,80 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         normedLightVector = VectorMath.normalize(lightVector, normedLightVector);
         double[] normedRayVector = new double[3];
         normedRayVector = VectorMath.normalize(rayVector, normedRayVector);
-        
+
         double normedX, normedY, normedZ;
         normedX = gradient.mag > 0 ? gradient.x / gradient.mag : 0;
         normedY = gradient.mag > 0 ? gradient.y / gradient.mag : 0;
         normedZ = gradient.mag > 0 ? gradient.z / gradient.mag : 0;
         double[] normedGradient = new double[3];
         VectorMath.setVector(normedGradient, normedX, normedY, normedZ);
-        
-        double[] halfway = new double[3];
-        VectorMath.setVector(halfway, normedRayVector[0] + normedLightVector[0], 
-                normedRayVector[1] + normedLightVector[1], 
+
+        double[] highlight = new double[3];
+        VectorMath.setVector(highlight, normedRayVector[0] + normedLightVector[0],
+                normedRayVector[1] + normedLightVector[1],
                 normedRayVector[2] + normedLightVector[2]);
-        double[] normedHalfway = new double[3];
-        normedHalfway = VectorMath.normalize(halfway, normedHalfway);
-        
+        double[] normedHighlight = new double[3];
+        normedHighlight = VectorMath.normalize(highlight, normedHighlight);
+
         double diffuse_term = Math.abs(VectorMath.dotproduct(normedLightVector, normedGradient));
-        double specular_term = Math.abs(VectorMath.dotproduct(normedGradient, normedHalfway));
+        double specular_term = Math.abs(VectorMath.dotproduct(normedGradient, normedHighlight));
         color.r = voxel_color.r * (k_ambient + k_diffuse * diffuse_term + k_specular * Math.pow(specular_term, n));
         color.g = voxel_color.g * (k_ambient + k_diffuse * diffuse_term + k_specular * Math.pow(specular_term, n));
         color.b = voxel_color.b * (k_ambient + k_diffuse * diffuse_term + k_specular * Math.pow(specular_term, n));
+        color.a = voxel_color.a;
+        return color;
+    }
+
+    private TFColor computeToneShading(TFColor voxel_color, VoxelGradient gradient, double[] lightVector,
+            double[] rayVector) {
+
+        // Gooch Tone Shading
+        TFColor color = new TFColor(0, 0, 0, 1);
+
+        double k_ambient = 0.1;
+        double k_diffuse = 0.7;
+        double k_specular = 0.2;
+        int n = 100;
+
+        double b = 0.4;
+        double y = 0.4;
+        double alpha = 0.2;
+        double beta = 0.6;
+        
+        double[] normedLightVector = new double[3];
+        normedLightVector = VectorMath.normalize(lightVector, normedLightVector);
+        double[] normedRayVector = new double[3];
+        normedRayVector = VectorMath.normalize(rayVector, normedRayVector);
+
+        double normedX, normedY, normedZ;
+        normedX = gradient.mag > 0 ? gradient.x / gradient.mag : 0;
+        normedY = gradient.mag > 0 ? gradient.y / gradient.mag : 0;
+        normedZ = gradient.mag > 0 ? gradient.z / gradient.mag : 0;
+        double[] normedGradient = new double[3];
+        VectorMath.setVector(normedGradient, normedX, normedY, normedZ);
+
+        double[] highlight = new double[3];
+        VectorMath.setVector(highlight, normedRayVector[0] + normedLightVector[0],
+                normedRayVector[1] + normedLightVector[1],
+                normedRayVector[2] + normedLightVector[2]);
+        double[] normedHighlight = new double[3];
+        normedHighlight = VectorMath.normalize(highlight, normedHighlight);
+
+        double specular_term = Math.abs(VectorMath.dotproduct(normedGradient, normedHighlight));
+
+        double[] k_warm = new double[3];
+        VectorMath.setVector(k_warm, y + k_diffuse * beta, y + k_diffuse * beta, k_diffuse * beta);
+        double[] k_cool = new double[3];
+        VectorMath.setVector(k_cool, k_diffuse * alpha, k_diffuse * alpha, b + k_diffuse * alpha);
+
+        double diffuse_term = VectorMath.dotproduct(normedLightVector, normedGradient);
+
+        color.r = voxel_color.r * (k_ambient + k_specular * Math.pow(specular_term, n) + 
+                (k_warm[0] * (1 - (1 + diffuse_term) * 0.5) + k_cool[0] * ((1 + diffuse_term) * 0.5)));
+        color.g = voxel_color.g * (k_ambient + k_specular * Math.pow(specular_term, n) + 
+                (k_warm[1] * (1 - (1 + diffuse_term) * 0.5) + k_cool[1] * ((1 + diffuse_term) * 0.5)));
+        color.b = voxel_color.b * (k_ambient + k_specular * Math.pow(specular_term, n) + 
+                (k_warm[2] * (1 - (1 + diffuse_term) * 0.5) + k_cool[2] * ((1 + diffuse_term) * 0.5)));
         color.a = voxel_color.a;
         return color;
     }
@@ -718,8 +794,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                                 val = traceRayIso(entryPoint, exitPoint, rayVector, sampleStep);
                                 break;
                         }
-                    }
-                    else {
+                    } else {
                         isBack = false;
                         switch (modeFront) {
                             case COMPOSITING:
@@ -763,16 +838,14 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         double opacity = 0.0;
         double radius = material_r / gradients.getMaxGradientMagnitude();
         double input_alpha = isBack ? tFunc2DBack.color.a : tFunc2DFront.color.a;
-        
+
         // TODO 8: Implement weight based opacity.
-        if (gradMagnitude == 0 && voxelValue == material_value){
+        if (gradMagnitude == 0 && voxelValue == material_value) {
             opacity = input_alpha;
-        }
-        else if (gradMagnitude >= 0 && voxelValue - radius * gradMagnitude <= material_value
-                && voxelValue + radius * gradMagnitude >= material_value){
+        } else if (gradMagnitude >= 0 && voxelValue - radius * gradMagnitude <= material_value
+                && voxelValue + radius * gradMagnitude >= material_value) {
             opacity = input_alpha * (1 - (1 / radius) * Math.abs((material_value - voxelValue) / gradMagnitude));
-        }
-        else {
+        } else {
             opacity = 0;
         }
         return opacity;
@@ -978,8 +1051,12 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
      *
      * @param shadingMode
      */
-    public void setShadingMode(boolean shadingMode) {
-        this.shadingMode = shadingMode;
+    public void setPhongShadingMode(boolean shadingMode) {
+        this.phongShadingMode = shadingMode;
+    }
+
+    public void setToneShadingMode(boolean shadingMode) {
+        this.toneShadingMode = shadingMode;
     }
 
     public RaycastRendererPanel getPanel() {

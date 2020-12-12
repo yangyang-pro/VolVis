@@ -33,26 +33,7 @@
                   <Group type="102" alignment="0" attributes="0">
                       <EmptySpace min="-2" pref="15" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="shadingCheckbox" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="cuttingPlaneCheckbox" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Group type="102" alignment="0" attributes="0">
-                              <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="compositingButton" min="-2" max="-2" attributes="0"/>
-                                  <Component id="tf2dButton" min="-2" max="-2" attributes="0"/>
-                                  <Component id="mipButton" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="slicerButton" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="isoSurfaceButton" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="jLabel7" alignment="0" min="-2" max="-2" attributes="0"/>
-                              </Group>
-                              <EmptySpace min="-2" pref="9" max="-2" attributes="0"/>
-                              <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="IsovalueTextBox" min="-2" pref="45" max="-2" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="jLabel3" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="colorButton" min="-2" pref="75" max="-2" attributes="0"/>
-                          </Group>
                           <Group type="102" alignment="0" attributes="0">
                               <Group type="103" groupAlignment="0" attributes="0">
                                   <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
@@ -71,6 +52,30 @@
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="colorButton1" min="-2" pref="75" max="-2" attributes="0"/>
                           </Group>
+                          <Group type="102" alignment="0" attributes="0">
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="compositingButton" min="-2" max="-2" attributes="0"/>
+                                  <Component id="tf2dButton" min="-2" max="-2" attributes="0"/>
+                                  <Component id="mipButton" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="slicerButton" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="isoSurfaceButton" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jLabel7" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Component id="shadingCheckbox" alignment="0" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                              <EmptySpace min="-2" pref="9" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="toneShadingCheckbox" min="-2" max="-2" attributes="0"/>
+                                  <Group type="102" attributes="0">
+                                      <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="IsovalueTextBox" min="-2" pref="45" max="-2" attributes="0"/>
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="jLabel3" min="-2" max="-2" attributes="0"/>
+                                      <EmptySpace max="-2" attributes="0"/>
+                                      <Component id="colorButton" min="-2" pref="75" max="-2" attributes="0"/>
+                                  </Group>
+                              </Group>
+                          </Group>
                       </Group>
                   </Group>
               </Group>
@@ -87,7 +92,10 @@
                   <Component id="renderingSpeedLabel" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace type="separate" max="-2" attributes="0"/>
-              <Component id="shadingCheckbox" min="-2" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="shadingCheckbox" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="toneShadingCheckbox" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="cuttingPlaneCheckbox" min="-2" max="-2" attributes="0"/>
               <EmptySpace min="-2" pref="13" max="-2" attributes="0"/>
@@ -199,7 +207,7 @@
     </Component>
     <Component class="javax.swing.JCheckBox" name="shadingCheckbox">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Volume shading"/>
+        <Property name="text" type="java.lang.String" value="Phong Shading"/>
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="shadingCheckboxActionPerformed"/>
@@ -368,6 +376,14 @@
         <Property name="text" type="java.lang.String" value="Front mode"/>
         <Property name="toolTipText" type="java.lang.String" value=""/>
       </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="toneShadingCheckbox">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Tone Shading"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="toneShadingCheckboxActionPerformed"/>
+      </Events>
     </Component>
   </SubComponents>
 </Form>
